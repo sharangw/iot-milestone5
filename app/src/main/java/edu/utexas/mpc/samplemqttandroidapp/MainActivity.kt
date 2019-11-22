@@ -36,6 +36,7 @@ class MainActivity : AppCompatActivity() {
     lateinit var imageView: ImageView
     lateinit var retrieveButton: Button
     lateinit var syncButton: Button
+    lateinit var tomorrowButton: Button
 
     lateinit var queue: RequestQueue
     lateinit var gson: Gson
@@ -68,6 +69,7 @@ class MainActivity : AppCompatActivity() {
         imageView = this.findViewById(R.id.icon)
         retrieveButton = this.findViewById(R.id.retrieveButton)
         syncButton = this.findViewById(R.id.syncButton)
+        tomorrowButton = this.findViewById(R.id.syncAgain)
         context = this.baseContext
 
         queue = Volley.newRequestQueue(this)
@@ -79,6 +81,9 @@ class MainActivity : AppCompatActivity() {
         // when the user presses the syncbutton, this method will get called
         syncButton.setOnClickListener({ sendWeatherData() })
 
+        // when user presses the tomorrowButton, this method will be called
+        tomorrowButton.setOnClickListener({ getBackSteps() })
+
         // initialize the paho mqtt client with the uri and client id
         mqttAndroidClient = MqttAndroidClient(getApplicationContext(), serverUri, clientId);
 
@@ -87,28 +92,31 @@ class MainActivity : AppCompatActivity() {
 
             // when the client is successfully connected to the broker, this method gets called
             override fun connectComplete(reconnect: Boolean, serverURI: String?) {
-                println("Connection Complete!!")
-                // this subscribes the client to the subscribe topic
+                println("sendWeatherData() - Connection Complete!!")
+
                 mqttAndroidClient.subscribe(subscribeTopic, 0)
 
                 val message = MqttMessage()
 
-                message.payload = ("IoTaxes Steps").toByteArray()
+                message.payload = ("IoTexas Steps").toByteArray()
 
                 message.payload = (weatherData).toByteArray()
                 // this publishes a message to the publish topic
                 mqttAndroidClient.publish(publishTopic, message)
+                println("published message")
 
             }
 
             // this method is called when a message is received that fulfills a subscription
             override fun messageArrived(topic: String, message: MqttMessage) {
-                //println(message)
+                println("sendWeatherData() - Message Arrived")
 
                 try {
                     val data = String(message.payload, charset("UTF-8"))
+                    println("getBackSteps() Data from Pi: " + data)
                     steps.setText(data)
                 } catch (e:Exception) {}
+
 
             }
 
@@ -235,14 +243,16 @@ class MainActivity : AppCompatActivity() {
 
                     // compute averages of all lists
                     val averageTemp : Long = calculateAverage(temps)
-                    val averageMinTemp : Long = calculateAverage(minTemps)
-                    val averageMaxTemp : Long = calculateAverage(maxTemps)
+                    val averageMinTemp : Long? = minTemps.min()
+                    val averageMinTempLong : Long = averageMinTemp!!.toLong()
+                    val averageMaxTemp : Long? = maxTemps.max()
+                    val averageMaxTempLong : Long = averageMaxTemp!!.toLong()
 
                     val averageRain : Double = calculateAverageDouble(rains)
                     val averageSnow : Double = calculateAverageDouble(snows)
 
                     // Create json object of forecasted weather data to send to Raspberry Pi
-                    prepareForecastWeatherData(averageTemp, averageMinTemp, averageMaxTemp, averageRain, averageSnow)
+                    prepareForecastWeatherData(averageTemp, averageMinTempLong, averageMaxTempLong, averageRain, averageSnow)
 
                     // combine two sets of weather data
                     weatherData = currentWeatherData + forecastWeatherData
@@ -254,37 +264,45 @@ class MainActivity : AppCompatActivity() {
         queue.add(stringRequestForecast)
     }
 
+    /**
+     * This method sends the weather data by publishing to the testtopic
+     */
     fun sendWeatherData() {
 
         // connects the paho mqtt client to the broker
         mqttAndroidClient.connect() // sync with pi
+        println("Connecting to PI.....")
 
         // when things happen in the mqtt client, these callbacks will be called
         mqttAndroidClient.setCallback(object: MqttCallbackExtended {
 
             // when the client is successfully connected to the broker, this method gets called
             override fun connectComplete(reconnect: Boolean, serverURI: String?) {
-                println("Connection Complete!!")
+                println("sendWeatherData() - Connection Complete!!")
+
+                mqttAndroidClient.subscribe(subscribeTopic, 0)
 
                 val message = MqttMessage()
 
-                message.payload = ("IoTaxes Steps").toByteArray()
+                message.payload = ("IoTexas Steps").toByteArray()
 
                 message.payload = (weatherData).toByteArray()
                 // this publishes a message to the publish topic
                 mqttAndroidClient.publish(publishTopic, message)
+                println("published message")
 
             }
 
             // this method is called when a message is received that fulfills a subscription
             override fun messageArrived(topic: String, message: MqttMessage) {
-                println("Message Arrived")
+                println("sendWeatherData() - Message Arrived")
 
                 try {
                     val data = String(message.payload, charset("UTF-8"))
-                    println("getBackStesp() Data from Pi: " + data)
+                    println("getBackSteps() Data from Pi: " + data)
                     steps.setText(data)
                 } catch (e:Exception) {}
+
 
             }
 
@@ -301,12 +319,14 @@ class MainActivity : AppCompatActivity() {
 
     fun getBackSteps(){
 
+        println("here inside get back steps")
+
         // when things happen in the mqtt client, these callbacks will be called
         mqttAndroidClient.setCallback(object: MqttCallbackExtended {
 
             // when the client is successfully connected to the broker, this method gets called
             override fun connectComplete(reconnect: Boolean, serverURI: String?) {
-                println("Connection Complete!!")
+                println("getBackSteps() - Connection Complete")
                 // this subscribes the client to the subscribe topic
                 mqttAndroidClient.subscribe(subscribeTopic, 0)
 
@@ -316,9 +336,11 @@ class MainActivity : AppCompatActivity() {
             override fun messageArrived(topic: String, message: MqttMessage) {
                 //println(message)
 
+                println("getBackSteps() - message arrived!!!!!!!")
+
                 try {
                     val data = String(message.payload, charset("UTF-8"))
-                    println("getBackStesp() Data from Pi: " + data)
+                    println("getBackSteps() Data from Pi: " + data)
                     steps.setText(data)
                 } catch (e:Exception) {}
 
