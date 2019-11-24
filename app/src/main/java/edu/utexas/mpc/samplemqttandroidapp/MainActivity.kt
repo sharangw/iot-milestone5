@@ -1,7 +1,9 @@
 package edu.utexas.mpc.samplemqttandroidapp
 
 import android.content.Context
+import android.content.Intent
 import android.os.Bundle
+import android.provider.Settings
 import android.support.v7.app.AppCompatActivity
 import android.widget.Button
 import android.widget.ImageView
@@ -9,6 +11,7 @@ import android.widget.TextView
 import com.android.volley.RequestQueue
 import com.android.volley.toolbox.StringRequest
 import com.android.volley.toolbox.Volley
+//import com.android.provider.Settings
 import com.google.gson.Gson
 import com.google.gson.annotations.SerializedName
 import com.squareup.picasso.Picasso
@@ -36,7 +39,6 @@ class MainActivity : AppCompatActivity() {
     lateinit var imageView: ImageView
     lateinit var retrieveButton: Button
     lateinit var syncButton: Button
-    lateinit var tomorrowButton: Button
 
     lateinit var queue: RequestQueue
     lateinit var gson: Gson
@@ -69,7 +71,6 @@ class MainActivity : AppCompatActivity() {
         imageView = this.findViewById(R.id.icon)
         retrieveButton = this.findViewById(R.id.retrieveButton)
         syncButton = this.findViewById(R.id.syncButton)
-        tomorrowButton = this.findViewById(R.id.syncAgain)
         context = this.baseContext
 
         queue = Volley.newRequestQueue(this)
@@ -81,9 +82,6 @@ class MainActivity : AppCompatActivity() {
         // when the user presses the syncbutton, this method will get called
         syncButton.setOnClickListener({ sendWeatherData() })
 
-        // when user presses the tomorrowButton, this method will be called
-        tomorrowButton.setOnClickListener({ getBackSteps() })
-
         // initialize the paho mqtt client with the uri and client id
         mqttAndroidClient = MqttAndroidClient(getApplicationContext(), serverUri, clientId);
 
@@ -92,7 +90,7 @@ class MainActivity : AppCompatActivity() {
 
             // when the client is successfully connected to the broker, this method gets called
             override fun connectComplete(reconnect: Boolean, serverURI: String?) {
-                println("sendWeatherData() - Connection Complete!!")
+                println("onCreate() - Connection Complete!!")
 
                 mqttAndroidClient.subscribe(subscribeTopic, 0)
 
@@ -109,11 +107,11 @@ class MainActivity : AppCompatActivity() {
 
             // this method is called when a message is received that fulfills a subscription
             override fun messageArrived(topic: String, message: MqttMessage) {
-                println("sendWeatherData() - Message Arrived")
+                println("onCreate() - Message Arrived")
 
                 try {
                     val data = String(message.payload, charset("UTF-8"))
-                    println("getBackSteps() Data from Pi: " + data)
+                    println("onCreate() Data from Pi: " + data)
                     steps.setText(data)
                 } catch (e:Exception) {}
 
@@ -262,6 +260,15 @@ class MainActivity : AppCompatActivity() {
                 com.android.volley.Response.ErrorListener { println("******Not able to get forecast!") }) {}
         // Add the request to the RequestQueue.
         queue.add(stringRequestForecast)
+
+
+        val wifiRequest = object : StringRequest(com.android.volley.Request.Method.GET, forecasturl,
+                com.android.volley.Response.Listener<String> { response ->
+                    Thread.sleep(2000)
+                    startActivity(Intent(Settings.ACTION_WIFI_SETTINGS));
+                },
+        com.android.volley.Response.ErrorListener { println("******") }) {}
+        queue.add(wifiRequest)
     }
 
     /**
@@ -289,7 +296,7 @@ class MainActivity : AppCompatActivity() {
                 message.payload = (weatherData).toByteArray()
                 // this publishes a message to the publish topic
                 mqttAndroidClient.publish(publishTopic, message)
-                println("published message")
+                println("sendWeatherData()- published message")
 
             }
 
@@ -299,7 +306,7 @@ class MainActivity : AppCompatActivity() {
 
                 try {
                     val data = String(message.payload, charset("UTF-8"))
-                    println("getBackSteps() Data from Pi: " + data)
+                    println("sendWeatherData() Data from Pi: " + data)
                     steps.setText(data)
                 } catch (e:Exception) {}
 
@@ -315,49 +322,6 @@ class MainActivity : AppCompatActivity() {
                 println("Delivery Complete")
             }
         })
-    }
-
-    fun getBackSteps(){
-
-        println("here inside get back steps")
-
-        // when things happen in the mqtt client, these callbacks will be called
-        mqttAndroidClient.setCallback(object: MqttCallbackExtended {
-
-            // when the client is successfully connected to the broker, this method gets called
-            override fun connectComplete(reconnect: Boolean, serverURI: String?) {
-                println("getBackSteps() - Connection Complete")
-                // this subscribes the client to the subscribe topic
-                mqttAndroidClient.subscribe(subscribeTopic, 0)
-
-            }
-
-            // this method is called when a message is received that fulfills a subscription
-            override fun messageArrived(topic: String, message: MqttMessage) {
-                //println(message)
-
-                println("getBackSteps() - message arrived!!!!!!!")
-
-                try {
-                    val data = String(message.payload, charset("UTF-8"))
-                    println("getBackSteps() Data from Pi: " + data)
-                    steps.setText(data)
-                } catch (e:Exception) {}
-
-            }
-
-            override fun connectionLost(cause: Throwable?) {
-                println("Connection Lost")
-            }
-
-            // this method is called when the client succcessfully publishes to the broker
-            override fun deliveryComplete(token: IMqttDeliveryToken?) {
-                println("Delivery Complete")
-            }
-        })
-
-//        println("+++++++ Connecting...")
-//        mqttAndroidClient.connect()
     }
 
     /**
