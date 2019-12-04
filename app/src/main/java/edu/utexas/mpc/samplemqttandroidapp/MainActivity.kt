@@ -39,6 +39,7 @@ class MainActivity : AppCompatActivity() {
     lateinit var imageView: ImageView
     lateinit var retrieveButton: Button
     lateinit var syncButton: Button
+    lateinit var monthButton: Button
 
     lateinit var queue: RequestQueue
     lateinit var gson: Gson
@@ -71,6 +72,7 @@ class MainActivity : AppCompatActivity() {
         imageView = this.findViewById(R.id.icon)
         retrieveButton = this.findViewById(R.id.retrieveButton)
         syncButton = this.findViewById(R.id.syncButton)
+        monthButton = this.findViewById(R.id.monthButton)
         context = this.baseContext
 
         queue = Volley.newRequestQueue(this)
@@ -81,6 +83,9 @@ class MainActivity : AppCompatActivity() {
 
         // when the user presses the syncbutton, this method will get called
         syncButton.setOnClickListener({ sendWeatherData() })
+
+        // when user presses the month button, then call method to get monthly goals and display in on Pi
+        monthButton.setOnClickListener({ calculateMonthlyGoals() })
 
         // initialize the paho mqtt client with the uri and client id
         mqttAndroidClient = MqttAndroidClient(getApplicationContext(), serverUri, clientId);
@@ -113,6 +118,7 @@ class MainActivity : AppCompatActivity() {
                     val data = String(message.payload, charset("UTF-8"))
                     println("onCreate() Data from Pi: " + data)
                     steps.setText(data)
+
                 } catch (e:Exception) {}
 
 
@@ -129,7 +135,6 @@ class MainActivity : AppCompatActivity() {
         })
 
     }
-
 
     /**
      * This method makes two calls to the weather API:
@@ -278,17 +283,15 @@ class MainActivity : AppCompatActivity() {
 
         // connects the paho mqtt client to the broker
         mqttAndroidClient.connect() // sync with pi
-        println("Connecting to PI.....")
+        println("############### Connecting to PI.....")
 
         // when things happen in the mqtt client, these callbacks will be called
         mqttAndroidClient.setCallback(object: MqttCallbackExtended {
 
 
-
-
             // when the client is successfully connected to the broker, this method gets called
             override fun connectComplete(reconnect: Boolean, serverURI: String?) {
-                println("sendWeatherData() - Connection Complete!!")
+                println("############### sendWeatherData() - Connection Complete!!")
 
                 mqttAndroidClient.subscribe(subscribeTopic, 0)
 
@@ -299,35 +302,97 @@ class MainActivity : AppCompatActivity() {
                 message.payload = (weatherData).toByteArray()
                 // this publishes a message to the publish topic
                 mqttAndroidClient.publish(publishTopic, message)
-                println("sendWeatherData()- published message")
+                println("############### sendWeatherData()- published message")
 
             }
 
             // this method is called when a message is received that fulfills a subscription
             override fun messageArrived(topic: String, message: MqttMessage) {
-                println("sendWeatherData() - Message Arrived")
+                println("############### sendWeatherData() - Message Arrived")
 
                 try {
                     val data = String(message.payload, charset("UTF-8"))
-                    println("sendWeatherData() Data from Pi: " + data)
+                    println("############### sendWeatherData() Data from Pi: " + data)
                     steps.setText(data)
 
                     mqttAndroidClient.disconnect()
-                    println("Disconnected from Pi")
+                    println("############### Disconnected from Pi")
                 } catch (e:Exception) {}
 
 
             }
 
             override fun connectionLost(cause: Throwable?) {
-                println("Connection Lost")
+                println("############### Connection Lost")
             }
 
             // this method is called when the client succcessfully publishes to the broker
             override fun deliveryComplete(token: IMqttDeliveryToken?) {
-                println("Delivery Complete")
+                println("############### Delivery Complete")
             }
         })
+    }
+
+    /**
+     * This method will let the Raspberry Pi know to print to the terminal the daily readjusted steps goals according to the new model
+     * for the entire month (or however much synthetic steps/weather data there is)
+     */
+    fun calculateMonthlyGoals() {
+        println("############### Calculating Monthly Goals...")
+
+        // connects the paho mqtt client to the broker
+        mqttAndroidClient.connect() // sync with pi
+        println("############### calculateMonthlyGoals()- Connecting to PI.....")
+
+        // when things happen in the mqtt client, these callbacks will be called
+        mqttAndroidClient.setCallback(object: MqttCallbackExtended {
+
+            // when the client is successfully connected to the broker, this method gets called
+            override fun connectComplete(reconnect: Boolean, serverURI: String?) {
+                println("############### calculateMonthlyGoals() - Connection Complete!!")
+
+                mqttAndroidClient.subscribe(subscribeTopic, 0)
+
+                val message = MqttMessage()
+
+                message.payload = ("IoTexas Steps").toByteArray()
+
+                message.payload = ("month").toByteArray()  // the pi will check if this message (starting with month) was sent and will display info accordingly
+                // this publishes a message to the publish topic
+                mqttAndroidClient.publish(publishTopic, message)
+                val messeageSent = message.payload.toString()
+                println("############### calculateMonthlyGoals()- published message")
+
+            }
+
+            // this method is called when a message is received that fulfills a subscription
+
+            // Should not be used for now
+            override fun messageArrived(topic: String, message: MqttMessage) {
+                println("############### calculateMonthlyGoals() - Message Arrived")
+
+                try {
+                    val data = String(message.payload, charset("UTF-8"))
+                    println("############### calculateMonthlyGoals() Data from Pi: " + data)
+                    steps.setText(data)
+
+                    mqttAndroidClient.disconnect()
+                    println("############### Disconnected from Pi")
+                } catch (e:Exception) {}
+
+
+            }
+
+            override fun connectionLost(cause: Throwable?) {
+                println("############### Connection Lost")
+            }
+
+            // this method is called when the client succcessfully publishes to the broker
+            override fun deliveryComplete(token: IMqttDeliveryToken?) {
+                println("############### Delivery Complete")
+            }
+        })
+
     }
 
 
