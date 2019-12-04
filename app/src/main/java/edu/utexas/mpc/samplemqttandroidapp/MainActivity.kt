@@ -283,6 +283,9 @@ class MainActivity : AppCompatActivity() {
         // when things happen in the mqtt client, these callbacks will be called
         mqttAndroidClient.setCallback(object: MqttCallbackExtended {
 
+
+
+
             // when the client is successfully connected to the broker, this method gets called
             override fun connectComplete(reconnect: Boolean, serverURI: String?) {
                 println("sendWeatherData() - Connection Complete!!")
@@ -308,6 +311,9 @@ class MainActivity : AppCompatActivity() {
                     val data = String(message.payload, charset("UTF-8"))
                     println("sendWeatherData() Data from Pi: " + data)
                     steps.setText(data)
+
+                    mqttAndroidClient.disconnect()
+                    println("Disconnected from Pi")
                 } catch (e:Exception) {}
 
 
@@ -323,6 +329,7 @@ class MainActivity : AppCompatActivity() {
             }
         })
     }
+
 
     /**
      * calculate average of arraylist of longs
