@@ -13,7 +13,6 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginEnd="8dp"
-        android:layout_marginBottom="36dp"
         android:hint="Enter Zip.."
         app:layout_constraintBottom_toTopOf="@+id/city"
         app:layout_constraintEnd_toStartOf="@+id/retrieveButton"
@@ -46,8 +45,8 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:text=""
-        android:textSize="30dp"
-        app:layout_constraintBottom_toTopOf="@+id/steps"
+        android:textSize="25dp"
+        app:layout_constraintBottom_toTopOf="@+id/description"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/city" />
@@ -69,6 +68,7 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:text=""
+        android:textColor="@android:color/holo_red_dark"
         android:textSize="25dp"
         app:layout_constraintBottom_toTopOf="@+id/icon"
         app:layout_constraintEnd_toEndOf="parent"
@@ -89,13 +89,15 @@
 
     <Button
         android:id="@+id/syncButton"
-        android:layout_width="wrap_content"
-        android:layout_height="76dp"
+        android:layout_width="221dp"
+        android:layout_height="77dp"
         android:layout_marginStart="150dp"
-        android:layout_marginTop="136dp"
+        android:layout_marginTop="196dp"
         android:layout_marginEnd="148dp"
-        android:text="Today's Goal"
+        android:gravity="center_horizontal|center_vertical"
+        android:text="Check Hourly Goal"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/description" />
 

@@ -369,9 +369,9 @@ class MainActivity : AppCompatActivity() {
 
         // notification builder
         var builder = NotificationCompat.Builder(this, "11")
-            .setSmallIcon(R.drawable.ic_launcher_background)
-                .setContentTitle("Step Goals")
-                .setContentText("Congrats, you reached half of your daily goal!")
+            .setSmallIcon(R.mipmap.ic_launcher_iot)
+                .setContentTitle("Congrats!")
+                .setContentText("You reached half of your daily goal")
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)
 
         var notificationId:Int = 1
@@ -397,7 +397,7 @@ class MainActivity : AppCompatActivity() {
             message = "Congrats! You have reached your daily goal!"
         } else {
             if (hourlySteps > 0) {
-                message = "You must walk " + hourlySteps + " steps to keep up with your goal"
+                message = "You must walk " + hourlySteps + " steps to keep up with your goal."
             } else {
                 message = "Good Job! You are on track to reach your daily goal!"
             }
