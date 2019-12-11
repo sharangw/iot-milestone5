@@ -1,9 +1,15 @@
 package edu.utexas.mpc.samplemqttandroidapp
 
+//import com.android.provider.Settings
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
+import android.support.v4.app.NotificationCompat
+import android.support.v4.app.NotificationManagerCompat
 import android.support.v7.app.AppCompatActivity
 import android.widget.Button
 import android.widget.ImageView
@@ -11,7 +17,6 @@ import android.widget.TextView
 import com.android.volley.RequestQueue
 import com.android.volley.toolbox.StringRequest
 import com.android.volley.toolbox.Volley
-//import com.android.provider.Settings
 import com.google.gson.Gson
 import com.google.gson.annotations.SerializedName
 import com.squareup.picasso.Picasso
@@ -39,14 +44,12 @@ class MainActivity : AppCompatActivity() {
     lateinit var imageView: ImageView
     lateinit var retrieveButton: Button
     lateinit var syncButton: Button
-    lateinit var monthButton: Button
 
     lateinit var queue: RequestQueue
     lateinit var gson: Gson
     lateinit var weatherByZip: WeatherByZip
     lateinit var weatherForecast: WeatherForecast
     lateinit var context: Context
-
 
     // I'm doing a late init here because I need this to be an instance variable but I don't
     // have all the info I need to initialize it yet
@@ -61,9 +64,29 @@ class MainActivity : AppCompatActivity() {
     val subscribeTopic = "testTopic2"
     val publishTopic = "testTopic1"
 
+    private fun createNotificationChannel() {
+        // Create the NotificationChannel, but only on API 26+ because
+        // the NotificationChannel class is new and not in the support library
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+//            val name = getString(1)
+//            val descriptionText = getString("desc")
+            val importance = NotificationManager.IMPORTANCE_DEFAULT
+            val channel = NotificationChannel("11", "IoTexas", importance).apply {
+                description = "WeatherandSteps"
+            }
+            // Register the channel with the system
+            val notificationManager: NotificationManager =
+                    getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            notificationManager.createNotificationChannel(channel)
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        // call create channel code
+        createNotificationChannel()
 
         tempText = this.findViewById(R.id.tempText)
         descriptionText = this.findViewById(R.id.description)
@@ -72,7 +95,6 @@ class MainActivity : AppCompatActivity() {
         imageView = this.findViewById(R.id.icon)
         retrieveButton = this.findViewById(R.id.retrieveButton)
         syncButton = this.findViewById(R.id.syncButton)
-        monthButton = this.findViewById(R.id.monthButton)
         context = this.baseContext
 
         queue = Volley.newRequestQueue(this)
@@ -83,9 +105,6 @@ class MainActivity : AppCompatActivity() {
 
         // when the user presses the syncbutton, this method will get called
         syncButton.setOnClickListener({ sendWeatherData() })
-
-        // when user presses the month button, then call method to get monthly goals and display in on Pi
-        monthButton.setOnClickListener({ calculateMonthlyGoals() })
 
         // initialize the paho mqtt client with the uri and client id
         mqttAndroidClient = MqttAndroidClient(getApplicationContext(), serverUri, clientId);
@@ -313,7 +332,17 @@ class MainActivity : AppCompatActivity() {
                 try {
                     val data = String(message.payload, charset("UTF-8"))
                     println("############### sendWeatherData() Data from Pi: " + data)
-                    steps.setText(data)
+                    val stepsList = data.split(',')
+                    val stepInts = stepsList.map{it.toInt()}
+                    println("############### sendWeatherData(): " + stepsList)
+
+                    val actualSteps = stepInts[0]
+                    val goalSteps = stepInts[1]
+                    val hourlySteps = stepInts[2]
+                    println("############### sendWeatherData(): " + hourlySteps)
+                    val userRec : String = userMessage(actualSteps, goalSteps, hourlySteps)
+                    println("############### sendWeatherData(): " + userRec)
+                    steps.setText(userRec)
 
                     mqttAndroidClient.disconnect()
                     println("############### Disconnected from Pi")
@@ -331,6 +360,61 @@ class MainActivity : AppCompatActivity() {
                 println("############### Delivery Complete")
             }
         })
+    }
+
+    /**
+     * This method will build and notify a message
+     */
+    fun sendNotification() {
+
+        // notification builder
+        var builder = NotificationCompat.Builder(this, "11")
+            .setSmallIcon(R.drawable.ic_launcher_background)
+                .setContentTitle("Step Goals")
+                .setContentText("Congrats, you reached half of your daily goal!")
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+
+        var notificationId:Int = 1
+        with(NotificationManagerCompat.from(this)) {
+            // notificationId is a unique int for each notification that you must define
+            notify(notificationId, builder.build())
+        }
+
+        notificationId += 1
+
+    }
+
+    /**
+     * This method will take the three step values and generate a customized message for the user
+     * based on their daily and hourly goals
+     */
+
+    fun userMessage(actual: Int, goal: Int, hourlySteps:Int) : String {
+
+        var message = ""
+
+        if (actual > goal) {
+            message = "Congrats! You have reached your daily goal!"
+        } else {
+            if (hourlySteps > 0) {
+                message = "You must walk " + hourlySteps + " steps to keep up with your goal"
+            } else {
+                message = "Good Job! You are on track to reach your daily goal!"
+            }
+
+            // send a notification if half of the goal is reached
+            if (actual >= goal/2) {
+                println("############### half goal reached")
+
+                try{
+                    sendNotification()
+                } catch (e:Exception) {
+                    println("############### Notification error")
+                }
+            }
+        }
+
+        return message
     }
 
     /**

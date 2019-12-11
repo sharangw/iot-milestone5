@@ -13,6 +13,7 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginEnd="8dp"
+        android:layout_marginBottom="36dp"
         android:hint="Enter Zip.."
         app:layout_constraintBottom_toTopOf="@+id/city"
         app:layout_constraintEnd_toStartOf="@+id/retrieveButton"
@@ -51,16 +52,6 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/city" />
 
-    <TextView
-        android:id="@+id/steps"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:text=""
-        android:textSize="30dp"
-        app:layout_constraintBottom_toTopOf="@+id/description"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/tempText" />
 
     <TextView
         android:id="@+id/description"
@@ -68,41 +59,42 @@
         android:layout_height="wrap_content"
         android:text=""
         android:textSize="25dp"
+        app:layout_constraintBottom_toTopOf="@+id/steps"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tempText" />
+
+    <TextView
+        android:id="@+id/steps"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text=""
+        android:textSize="25dp"
         app:layout_constraintBottom_toTopOf="@+id/icon"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/steps" />
+        app:layout_constraintTop_toBottomOf="@+id/description" />
+
 
     <ImageView
         android:id="@+id/icon"
         android:layout_width="0dp"
         android:layout_height="100dp"
-        android:layout_marginBottom="120dp"
+        android:layout_marginBottom="36dp"
         app:layout_constraintBottom_toTopOf="@+id/syncButton"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="1.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/description" />
 
     <Button
         android:id="@+id/syncButton"
         android:layout_width="wrap_content"
-        android:layout_height="136dp"
-        android:layout_marginStart="1dp"
+        android:layout_height="76dp"
+        android:layout_marginStart="150dp"
         android:layout_marginTop="136dp"
         android:layout_marginEnd="148dp"
         android:text="Today's Goal"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/description" />
-
-    <Button
-        android:id="@+id/monthButton"
-        android:layout_width="wrap_content"
-        android:layout_height="136dp"
-        android:layout_marginStart="315dp"
-        android:layout_marginTop="136dp"
-        android:layout_marginEnd="148dp"
-        android:text="Monthly Goals"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/description" />
