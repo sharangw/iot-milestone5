@@ -4,6 +4,8 @@ from datetime import datetime
 import pytz
 import pandas as pd
 import numpy as np
+import warnings
+warnings.filterwarnings("ignore")
 
 import aioblescan as aiobs
 from aioblescan.plugins import EddyStone
@@ -104,8 +106,11 @@ def calculateHourlyGoal(expectedSteps, actualSteps):
   print("hoursLeft: ", hoursLeft)
   
   stepsToCover = expectedSteps - actualSteps
-  if stepsToCover > 0:
-    hourlySteps = (int) (stepsToCover/hoursLeft)
+  hourlyExpectedSteps = (int) (stepsToCover/hoursLeft)
+  hourlyActualSteps = (int) (actualSteps/now)
+  hourlySteps = hourlyExpectedSteps - hourlyActualSteps
+
+  if hourlySteps > 0:
     return hourlySteps
   else:
     hourlySteps = 0
